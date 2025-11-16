@@ -14,7 +14,312 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      appointments: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          created_at: string | null
+          current_stage: string | null
+          doctor_id: string
+          id: string
+          notes: string | null
+          patient_id: string
+          status: string
+          updated_at: string | null
+          urgent: boolean | null
+          visit_history: number | null
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          created_at?: string | null
+          current_stage?: string | null
+          doctor_id: string
+          id?: string
+          notes?: string | null
+          patient_id: string
+          status?: string
+          updated_at?: string | null
+          urgent?: boolean | null
+          visit_history?: number | null
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          created_at?: string | null
+          current_stage?: string | null
+          doctor_id?: string
+          id?: string
+          notes?: string | null
+          patient_id?: string
+          status?: string
+          updated_at?: string | null
+          urgent?: boolean | null
+          visit_history?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointments_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctors: {
+        Row: {
+          available: boolean | null
+          created_at: string | null
+          id: string
+          name: string
+          specialization: string
+          user_id: string | null
+        }
+        Insert: {
+          available?: boolean | null
+          created_at?: string | null
+          id?: string
+          name: string
+          specialization: string
+          user_id?: string | null
+        }
+        Update: {
+          available?: boolean | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          specialization?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctors_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      medications: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          default_dosage: string | null
+          generic_name: string | null
+          id: string
+          low_stock_threshold: number | null
+          name: string
+          stock_quantity: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          default_dosage?: string | null
+          generic_name?: string | null
+          id?: string
+          low_stock_threshold?: number | null
+          name: string
+          stock_quantity?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          default_dosage?: string | null
+          generic_name?: string | null
+          id?: string
+          low_stock_threshold?: number | null
+          name?: string
+          stock_quantity?: number | null
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          appointment_id: string | null
+          id: string
+          message: string
+          sent_at: string | null
+          status: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          id?: string
+          message: string
+          sent_at?: string | null
+          status?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          appointment_id?: string | null
+          id?: string
+          message?: string
+          sent_at?: string | null
+          status?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prescription_items: {
+        Row: {
+          created_at: string | null
+          days: number
+          dosage: string
+          id: string
+          instructions: string | null
+          medication_id: string
+          prescription_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string | null
+          days: number
+          dosage: string
+          id?: string
+          instructions?: string | null
+          medication_id: string
+          prescription_id: string
+          quantity: number
+        }
+        Update: {
+          created_at?: string | null
+          days?: number
+          dosage?: string
+          id?: string
+          instructions?: string | null
+          medication_id?: string
+          prescription_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescription_items_medication_id_fkey"
+            columns: ["medication_id"]
+            isOneToOne: false
+            referencedRelation: "medications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescription_items_prescription_id_fkey"
+            columns: ["prescription_id"]
+            isOneToOne: false
+            referencedRelation: "prescriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prescriptions: {
+        Row: {
+          appointment_id: string
+          created_at: string | null
+          doctor_id: string
+          id: string
+          patient_id: string
+          status: string
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          appointment_id: string
+          created_at?: string | null
+          doctor_id: string
+          id?: string
+          patient_id: string
+          status?: string
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          appointment_id?: string
+          created_at?: string | null
+          doctor_id?: string
+          id?: string
+          patient_id?: string
+          status?: string
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prescriptions_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_doctor_id_fkey"
+            columns: ["doctor_id"]
+            isOneToOne: false
+            referencedRelation: "doctors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prescriptions_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          id: string
+          mobile: string | null
+          name: string | null
+          role: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          id: string
+          mobile?: string | null
+          name?: string | null
+          role: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          mobile?: string | null
+          name?: string | null
+          role?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
