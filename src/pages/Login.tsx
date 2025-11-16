@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import logo from '@/assets/pulse-ai-logo.png';
+import { SetupHelper } from '@/components/SetupHelper';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -154,6 +155,7 @@ export default function Login() {
           </TabsContent>
         </Tabs>
       </Card>
+      <SetupHelper />
     </div>
   );
 }
