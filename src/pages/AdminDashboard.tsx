@@ -4,7 +4,8 @@ import { Calendar, DollarSign, FileText, Users, Clock, TrendingUp } from 'lucide
 import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { mockAppointments, mockDoctors } from '@/lib/mockData';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
 
 export default function AdminDashboard() {
   const todayAppointments = mockAppointments.filter(

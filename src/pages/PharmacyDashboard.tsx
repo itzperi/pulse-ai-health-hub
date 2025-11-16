@@ -6,8 +6,9 @@ import { Card } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { mockPrescriptions } from '@/lib/mockData';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 export default function PharmacyDashboard() {
   const [prescriptions, setPrescriptions] = useState(mockPrescriptions);
