@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { StatCard } from '@/components/StatCard';
 import { Package, Clock, CheckCircle, AlertCircle } from 'lucide-react';
@@ -11,20 +11,80 @@ import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 
 export default function PharmacyDashboard() {
-  const [prescriptions, setPrescriptions] = useState(mockPrescriptions);
+  const [prescriptions, setPrescriptions] = useState<any[]>([]);
+  const [lowStockMeds, setLowStockMeds] = useState<any[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    fetchPrescriptions();
+    fetchLowStockMedications();
+  }, []);
+
+  const fetchPrescriptions = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data } = await supabase
+        .from('prescriptions')
+        .select(`
+          *,
+          patient:profiles!prescriptions_patient_id_fkey(name),
+          doctor:doctors(name),
+          prescription_items(
+            *,
+            medication:medications(name)
+          )
+        `)
+        .gte('created_at', today)
+        .order('created_at', { ascending: false });
+
+      setPrescriptions(data || []);
+    } catch (error) {
+      console.error('Error fetching prescriptions:', error);
+    }
+  };
+
+  const fetchLowStockMedications = async () => {
+    try {
+      const { data } = await supabase
+        .from('medications')
+        .select('*')
+        .lt('stock_quantity', 20)
+        .order('stock_quantity');
+
+      setLowStockMeds(data || []);
+    } catch (error) {
+      console.error('Error fetching low stock medications:', error);
+    }
+  };
 
   const pendingCount = prescriptions.filter(p => p.status === 'pending').length;
   const fulfilledCount = prescriptions.filter(p => p.status === 'fulfilled').length;
 
-  const handleFulfill = (id: string) => {
-    setPrescriptions(prescriptions.map(p => 
-      p.id === id ? { ...p, status: 'fulfilled' as const } : p
-    ));
-    toast({
-      title: 'Prescription fulfilled',
-      description: 'Payment collected and medicine dispensed'
-    });
+  const handleFulfill = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('prescriptions')
+        .update({ status: 'fulfilled' })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setPrescriptions(prescriptions.map(p => 
+        p.id === id ? { ...p, status: 'fulfilled' } : p
+      ));
+      
+      toast({
+        title: 'Prescription fulfilled',
+        description: 'Payment collected and medicine dispensed'
+      });
+    } catch (error) {
+      console.error('Error fulfilling prescription:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to fulfill prescription',
+        variant: 'destructive'
+      });
+    }
   };
 
   return (
@@ -55,15 +115,15 @@ export default function PharmacyDashboard() {
             <TableBody>
               {prescriptions.map((prx) => (
                 <TableRow key={prx.id}>
-                  <TableCell className="font-medium">{new Date(prx.date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</TableCell>
-                  <TableCell>{prx.patientName}</TableCell>
-                  <TableCell>{prx.doctorName}</TableCell>
+                  <TableCell className="font-medium">{new Date(prx.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</TableCell>
+                  <TableCell>{prx.patient?.name}</TableCell>
+                  <TableCell>{prx.doctor?.name}</TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      {prx.medications.map((med, idx) => (
+                      {prx.prescription_items?.map((item: any, idx: number) => (
                         <div key={idx} className="text-sm">
-                          <span className="font-medium">{med.name}</span>
-                          <span className="text-muted-foreground"> - {med.dosage} × {med.days} days</span>
+                          <span className="font-medium">{item.medication?.name}</span>
+                          <span className="text-muted-foreground"> - {item.dosage} × {item.days} days</span>
                         </div>
                       ))}
                     </div>
@@ -101,18 +161,15 @@ export default function PharmacyDashboard() {
             Low Stock Alerts
           </h2>
           <div className="space-y-3">
-            <div className="flex justify-between items-center p-3 bg-warning/5 rounded-lg">
-              <span className="font-medium">Dolo 650</span>
-              <Badge variant="outline">15 units left</Badge>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-warning/5 rounded-lg">
-              <span className="font-medium">Amoxicillin 500mg</span>
-              <Badge variant="outline">8 units left</Badge>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-warning/5 rounded-lg">
-              <span className="font-medium">Cetirizine</span>
-              <Badge variant="outline">12 units left</Badge>
-            </div>
+            {lowStockMeds.map((med) => (
+              <div key={med.id} className="flex justify-between items-center p-3 bg-warning/5 rounded-lg">
+                <span className="font-medium">{med.name}</span>
+                <Badge variant="outline">{med.stock_quantity} units left</Badge>
+              </div>
+            ))}
+            {lowStockMeds.length === 0 && (
+              <p className="text-sm text-muted-foreground">No low stock items</p>
+            )}
           </div>
         </Card>
       </div>

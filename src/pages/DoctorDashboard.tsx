@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { StatCard } from '@/components/StatCard';
 import { Calendar, Clock, Users, FileText } from 'lucide-react';
@@ -7,6 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { MedicineAutocomplete } from '@/components/MedicineAutocomplete';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -16,14 +18,60 @@ import { format } from 'date-fns';
 export default function DoctorDashboard() {
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null);
   const [medications, setMedications] = useState([{ name: '', dosage: '', days: 1 }]);
+  const [appointments, setAppointments] = useState<any[]>([]);
+  const [medicationsList, setMedicationsList] = useState<string[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const todayAppointments = mockAppointments.filter(
-    apt => apt.date === new Date().toISOString().split('T')[0]
-  );
+  useEffect(() => {
+    if (user) {
+      fetchAppointments();
+      fetchMedications();
+    }
+  }, [user]);
 
-  const filteredMedications = medicationSuggestions.filter(med =>
+  const fetchAppointments = async () => {
+    try {
+      const { data: doctorData } = await supabase
+        .from('doctors')
+        .select('id')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (doctorData) {
+        const today = new Date().toISOString().split('T')[0];
+        const { data } = await supabase
+          .from('appointments')
+          .select(`
+            *,
+            patient:profiles!appointments_patient_id_fkey(name)
+          `)
+          .eq('doctor_id', doctorData.id)
+          .eq('appointment_date', today)
+          .order('appointment_time');
+
+        setAppointments(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+    }
+  };
+
+  const fetchMedications = async () => {
+    try {
+      const { data } = await supabase
+        .from('medications')
+        .select('name')
+        .order('name');
+
+      setMedicationsList(data?.map(m => m.name) || []);
+    } catch (error) {
+      console.error('Error fetching medications:', error);
+    }
+  };
+
+  const filteredMedications = medicationsList.filter(med =>
     med.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -45,10 +93,10 @@ export default function DoctorDashboard() {
       <div className="space-y-6">
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard title="Today's Appointments" value={todayAppointments.length} icon={Calendar} />
-          <StatCard title="Pending Patients" value={2} icon={Clock} />
-          <StatCard title="Total Patients" value={45} icon={Users} />
-          <StatCard title="Prescriptions" value={8} icon={FileText} />
+          <StatCard title="Today's Appointments" value={appointments.length} icon={Calendar} />
+          <StatCard title="Pending Patients" value={appointments.filter(a => a.status === 'pending').length} icon={Clock} />
+          <StatCard title="Total Patients" value={appointments.length} icon={Users} />
+          <StatCard title="Prescriptions" value={0} icon={FileText} />
         </div>
 
         {/* Today's Patients */}
@@ -66,15 +114,15 @@ export default function DoctorDashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {todayAppointments.map((apt) => (
+              {appointments.map((apt) => (
                 <TableRow key={apt.id} className={apt.urgent ? 'bg-destructive/5' : ''}>
-                  <TableCell className="font-medium">{apt.time}</TableCell>
+                  <TableCell className="font-medium">{apt.appointment_time}</TableCell>
                   <TableCell>
-                    {apt.patientName}
+                    {apt.patient?.name}
                     {apt.urgent && <Badge variant="destructive" className="ml-2">Urgent</Badge>}
                   </TableCell>
-                  <TableCell>{apt.visitHistory} visits</TableCell>
-                  <TableCell className="text-sm">{apt.currentStage}</TableCell>
+                  <TableCell>{apt.visit_history || 1} visits</TableCell>
+                  <TableCell className="text-sm">{apt.current_stage}</TableCell>
                   <TableCell>
                     <Badge variant={apt.status === 'confirmed' ? 'default' : 'secondary'}>
                       {apt.status}
@@ -89,7 +137,7 @@ export default function DoctorDashboard() {
                       </DialogTrigger>
                       <DialogContent className="max-w-2xl">
                         <DialogHeader>
-                          <DialogTitle>Create Prescription - {apt.patientName}</DialogTitle>
+                          <DialogTitle>Create Prescription - {apt.patient?.name}</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4 max-h-[60vh] overflow-y-auto">
                           {medications.map((med, idx) => (
