@@ -7,10 +7,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { mockAppointments, medicationSuggestions } from '@/lib/mockData';
+import { MedicineAutocomplete } from '@/components/MedicineAutocomplete';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { format } from 'date-fns';
 
 export default function DoctorDashboard() {
   const [selectedPatient, setSelectedPatient] = useState<string | null>(null);

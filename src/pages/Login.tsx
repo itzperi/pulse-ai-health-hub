@@ -22,30 +22,31 @@ export default function Login() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (login(username, password)) {
+    const success = await login(username, password);
+    if (success) {
       toast({ title: 'Login successful!' });
-      // Navigation will be handled by App.tsx based on role
       navigate('/');
     } else {
       toast({
         title: 'Login failed',
-        description: 'Invalid username or password',
+        description: 'Invalid email or password',
         variant: 'destructive'
       });
     }
   };
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (signup(signupData.email, signupData.password, signupData.name, signupData.mobile)) {
+    const success = await signup(signupData.email, signupData.password, signupData.name, signupData.mobile);
+    if (success) {
       toast({ title: 'Signup successful! Welcome to Pulse AI' });
-      navigate('/');
+      navigate('/patient');
     } else {
       toast({
         title: 'Signup failed',
-        description: 'Email already registered',
+        description: 'Email already registered or invalid',
         variant: 'destructive'
       });
     }
@@ -67,14 +68,14 @@ export default function Login() {
           <TabsContent value="login">
             <form onSubmit={handleLogin} className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Label htmlFor="username">Username / Email</Label>
+                <Label htmlFor="username">Email</Label>
                 <Input
                   id="username"
-                  type="text"
+                  type="email"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   required
-                  placeholder="Enter your username"
+                  placeholder="Enter your email"
                 />
               </div>
               <div className="space-y-2">
